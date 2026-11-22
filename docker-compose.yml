@@ -1,0 +1,10 @@
+services:
+  uptime-pinger:
+    build: .
+    container_name: uptime-pinger
+    restart: unless-stopped        # start again after a crash or reboot
+    env_file:
+      - path: .env                 # your Telegram / Discord secrets
+        required: false
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro   # edit sites without rebuilding

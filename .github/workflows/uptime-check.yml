@@ -1,0 +1,28 @@
+name: Scheduled uptime check
+
+# Free monitoring: GitHub runs this every 15 minutes.
+# Add your secrets in: repo Settings > Secrets and variables > Actions
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:       # adds a "Run workflow" button in the Actions tab
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Check all sites once
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m uptime_pinger --once

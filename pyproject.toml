@@ -1,0 +1,32 @@
+[project]
+name = "uptime-pinger"
+version = "1.0.0"
+description = "Check websites on a schedule and get Telegram or Discord alerts when they go down."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "requests>=2.32,<3",
+    "PyYAML>=6.0.2,<7",
+    "python-dotenv>=1.0,<2",
+]
+
+[project.scripts]
+uptime-pinger = "uptime_pinger.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["uptime_pinger"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
