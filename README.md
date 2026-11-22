@@ -1,6 +1,6 @@
 # uptime-pinger
 
-![CI](https://github.com/YOUR-USERNAME/uptime-pinger/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/AshikRahmanOP/uptime-pinger/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -12,8 +12,6 @@ A small Python DevOps tool that checks your websites on a schedule and sends you
 2026-11-22 22:45:17 INFO    UP    GitHub               https://github.com (200, 853.4 ms)
 2026-11-22 22:45:26 WARNING DOWN  NotFound             https://github.com/this/page/... (Expected 200, got 404)
 ```
-
-> Replace `YOUR-USERNAME` in the badge link above with your GitHub username after you push.
 
 ---
 
@@ -83,7 +81,7 @@ You need **Python 3.10 or newer** and **Git**.
 **1. Get the code**
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/uptime-pinger.git
+git clone https://github.com/AshikRahmanOP/uptime-pinger.git
 cd uptime-pinger
 ```
 
@@ -543,17 +541,22 @@ The project already has a local Git repository with a first commit. To upload it
 2. In this folder, run:
 
 ```bash
-git remote add origin https://github.com/YOUR-USERNAME/uptime-pinger.git
+git remote add origin https://github.com/AshikRahmanOP/uptime-pinger.git
 git branch -M main
 git push -u origin main
 ```
 
+   If Git says `remote origin already exists`, the remote is already set up. Skip that line.
+   The first push opens a browser window asking you to sign in to GitHub. That is
+   Git Credential Manager, and it remembers your login after that.
 3. Open the **Actions** tab on GitHub and watch the CI run turn green.
-4. Edit the badge link at the top of this README to use your username, then:
+   The CI badge at the top of this README turns green too.
+
+After that, the everyday loop for any change is:
 
 ```bash
-git add README.md
-git commit -m "Update CI badge link"
+git add .
+git commit -m "Describe what you changed"
 git push
 ```
 
