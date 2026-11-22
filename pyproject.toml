@@ -9,6 +9,7 @@ dependencies = [
     "requests>=2.32,<3",
     "PyYAML>=6.0.2,<7",
     "python-dotenv>=1.0,<2",
+    "discord.py>=2.4,<3",
 ]
 
 [project.scripts]

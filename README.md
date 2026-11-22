@@ -21,13 +21,14 @@ A small Python DevOps tool that checks your websites on a schedule and sends you
 2. [Project structure](#project-structure)
 3. [Quick start](#quick-start)
 4. [Setting up alerts](#setting-up-alerts)
-5. [Running with Docker](#running-with-docker)
-6. [Free monitoring with GitHub Actions](#free-monitoring-with-github-actions)
-7. [Running the tests](#running-the-tests)
-8. [How I built it, step by step](#how-i-built-it-step-by-step)
-9. [Putting it on GitHub](#putting-it-on-github)
-10. [Glossary for beginners](#glossary-for-beginners)
-11. [Ideas to extend it](#ideas-to-extend-it)
+5. [Chat bot: check any site on demand](#chat-bot-check-any-site-on-demand)
+6. [Running with Docker](#running-with-docker)
+7. [Free monitoring with GitHub Actions](#free-monitoring-with-github-actions)
+8. [Running the tests](#running-the-tests)
+9. [How I built it, step by step](#how-i-built-it-step-by-step)
+10. [Putting it on GitHub](#putting-it-on-github)
+11. [Glossary for beginners](#glossary-for-beginners)
+12. [Ideas to extend it](#ideas-to-extend-it)
 
 ---
 
@@ -37,11 +38,12 @@ A small Python DevOps tool that checks your websites on a schedule and sends you
 - A site is **up** if it answers with the expected HTTP status code (200 by default) before a timeout.
 - Sends alerts to **Telegram** and/or **Discord**.
 - **No alert spam:** it alerts only when a site *changes* state (up to down, or down to up).
+- **Chat bot:** send any URL to your Telegram or Discord bot and it replies whether the site is up.
 - `--once` mode for scripts, cron jobs and CI. It exits with code `1` if any site is down.
 - Runs in **Docker**, with a `docker-compose.yml` that restarts it automatically.
 - **CI pipeline** on GitHub Actions: lint, tests on 3 Python versions, and a Docker build.
 - **Free hosted monitoring**: a scheduled GitHub Actions workflow checks your sites every 15 minutes.
-- 23 automated tests. They use fake HTTP responses, so they never touch the real internet.
+- 37 automated tests. They use fake HTTP responses, so they never touch the real internet.
 
 ---
 
@@ -55,6 +57,7 @@ uptime-pinger/
 │   ├── config.py             # Reads and validates config.yaml
 │   ├── checker.py            # Checks one website
 │   ├── notifier.py           # Sends Telegram / Discord messages
+│   ├── bot.py                # Chat bot: replies to URLs sent in Telegram / Discord
 │   └── monitor.py            # The loop + "only alert on change" logic
 ├── tests/                    # Automated tests (pytest)
 ├── .github/workflows/
@@ -132,6 +135,7 @@ python -m uptime_pinger --help      # see all options
 |---|---|
 | `-c`, `--config FILE` | Use a different config file (default `config.yaml`) |
 | `--once` | Check one time and exit |
+| `--bot` | Run the chat bot that answers URL checks ([details](#chat-bot-check-any-site-on-demand)) |
 | `-v`, `--verbose` | Show extra debug logs |
 | `--version` | Print the version |
 
@@ -141,7 +145,7 @@ python -m uptime_pinger --help      # see all options
 |---|---|
 | `0` | All sites are up |
 | `1` | At least one site is down (`--once` mode) |
-| `2` | The config file is missing or invalid |
+| `2` | The config file is missing or invalid, or `--bot` has no bot token |
 
 ---
 
@@ -183,6 +187,61 @@ To test an alert, add a fake site such as `https://this-does-not-exist-12345.com
 
 ---
 
+## Chat bot: check any site on demand
+
+Besides the scheduled checks, you can ask the bot about **any** website, any time.
+Send it a message that is just a URL and it replies:
+
+```
+You:  lutfulkabir.me
+Bot:  ✅ lutfulkabir.me is UP: HTTP 200 in 366.1 ms
+
+You:  /check google.com doesnotexist-xyz123.com
+Bot:  ✅ google.com is UP: HTTP 200 in 974.4 ms
+      🔴 doesnotexist-xyz123.com is DOWN: no response (ConnectionError)
+```
+
+How it decides what to answer:
+
+- A message that contains **only** URLs or domains (like `example.com` or `https://github.com/x`) gets a reply.
+- `/check <url> ...` or `!check <url> ...` always gets a reply. Up to 5 sites per message.
+- `/start` or `/help` shows the help text.
+- Anything else (normal chat) is ignored, so the bot stays quiet in a busy channel.
+- A site is **UP** if it answers with any status below 400 (2xx success or 3xx redirect).
+  4xx/5xx errors, timeouts and DNS failures count as **DOWN**.
+- Private and local addresses (`localhost`, `192.168.x.x`, `10.x.x.x`, ...) are refused,
+  so nobody can use your bot to probe the network it runs on.
+
+### Telegram bot
+
+It reuses the same `TELEGRAM_BOT_TOKEN` as the alerts. Nothing else to set up.
+The bot uses *long polling*: it keeps asking Telegram for new messages, so you don't
+need a public server or a domain.
+
+### Discord bot
+
+A webhook (`DISCORD_WEBHOOK_URL`) can only **send** messages. To **read** your
+messages and reply, Discord needs a real bot:
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and click **New Application**.
+2. Go to **Bot**, click **Reset Token**, and copy it into `DISCORD_BOT_TOKEN` in your `.env`.
+3. On the same **Bot** page, turn on **Message Content Intent** and save. Without it, the bot can't see what you typed.
+4. Go to **OAuth2 > URL Generator**. Tick the scope **bot**, then the permissions
+   **View Channels**, **Send Messages** and **Read Message History**.
+5. Open the generated URL and add the bot to your server.
+
+### Run it
+
+```bash
+python -m uptime_pinger --bot
+```
+
+It starts whichever bots have a token in `.env` (Telegram, Discord or both) and keeps
+running until you press Ctrl+C. The scheduled monitor is a separate process, so run
+both if you want alerts **and** on-demand checks.
+
+---
+
 ## Running with Docker
 
 Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) first.
@@ -196,6 +255,7 @@ docker run --rm uptime-pinger --once
 
 # Or run it in the background with docker compose
 docker compose up -d --build
+docker compose --profile bot up -d --build   # also start the chat bot
 docker compose logs -f        # watch the logs (Ctrl+C stops watching, not the app)
 docker compose down           # stop it
 ```
@@ -205,7 +265,9 @@ The compose file:
 - reads your secrets from `.env`,
 - mounts `config.yaml` into the container, so you can edit sites without rebuilding
   (run `docker compose restart` after editing),
-- restarts the container automatically if it crashes or the computer reboots.
+- restarts the container automatically if it crashes or the computer reboots,
+- has a second `bot` service for the [chat bot](#chat-bot-check-any-site-on-demand). It only
+  starts with `--profile bot`, so people without a bot token don't get a crashing container.
 
 ---
 

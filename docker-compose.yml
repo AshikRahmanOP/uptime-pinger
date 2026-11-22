@@ -8,3 +8,15 @@ services:
         required: false
     volumes:
       - ./config.yaml:/app/config.yaml:ro   # edit sites without rebuilding
+
+  # Chat bot: send a URL in Telegram/Discord, get an up/down reply.
+  # Only starts when asked for:  docker compose --profile bot up -d
+  bot:
+    profiles: ["bot"]
+    build: .
+    container_name: uptime-pinger-bot
+    restart: unless-stopped
+    command: ["--bot"]
+    env_file:
+      - path: .env
+        required: false

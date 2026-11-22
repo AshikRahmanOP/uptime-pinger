@@ -19,6 +19,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("-c", "--config", default="config.yaml", help="Path to the YAML config file.")
     parser.add_argument("--once", action="store_true", help="Check all sites one time and exit.")
+    parser.add_argument(
+        "--bot", action="store_true", help="Run the Telegram/Discord bot that answers URL checks in chat."
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debug logs.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser.parse_args(argv)
@@ -34,6 +37,11 @@ def main(argv: list[str] | None = None) -> int:
     log = logging.getLogger("uptime_pinger")
 
     load_dotenv()  # read secrets from a .env file if one exists
+
+    if args.bot:
+        from .bot import run_bots
+
+        return run_bots()
 
     try:
         config = load_config(args.config)
