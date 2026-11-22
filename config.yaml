@@ -13,3 +13,8 @@ sites:
   - name: Python.org
     url: https://www.python.org
     expected_status: 200  # the HTTP status code that means "healthy"
+
+  - name: lutfulkabir.me
+    url: https://lutfulkabir.me
+    expected_status: 200
+    timeout: 10
